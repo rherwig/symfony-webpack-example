@@ -1,0 +1,37 @@
+server {
+	listen 80;
+	listen [::]:80;
+
+	server_name vagrant.dev;
+
+	root /var/www/vagrant/web;
+
+	rewrite ^/app\.php/?(.*)$ /$1 permanent;
+
+	try_files $uri @rewriteapp;
+
+    location @rewriteapp {
+        rewrite ^(.*)$ /app.php/$1 last;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+
+    location ~ ^/(app|app_dev)\.php(/|$) {
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_index app.php;
+        send_timeout 1800;
+        fastcgi_read_timeout 1800;
+        fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+	}
+
+    location /(bundles|media) {
+        access_log off;
+        expires 30d;
+
+        try_files $uri @rewriteapp;
+    }
+}
